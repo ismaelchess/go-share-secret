@@ -6,16 +6,17 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"sync"
 	"text/template"
 	"time"
 
 	"github.com/gorilla/mux"
 )
 
-var StoreData map[string]sdata
+var StoreData sync.Map
 
 func init() {
-	StoreData = make(map[string]sdata)
+
 }
 
 func main() {
@@ -55,16 +56,16 @@ func PostGoSecret(w http.ResponseWriter, r *http.Request) {
 	}
 
 	idUrl := sdata.getUniqueId()
-	StoreData[idUrl] = sdata
+	StoreData.Store(idUrl, sdata.Value)
 
 	time.AfterFunc(sdata.expirationDate(), func() {
-		delete(StoreData, idUrl)
+		StoreData.Delete(idUrl)
 	})
 
 	data, err := json.Marshal(&struct {
 		URI string `json:"uri"`
 	}{
-		URI: "http://localhost:8081/" + idUrl,
+		URI: "http://localhost:8081/secret/" + idUrl,
 	})
 
 	if err != nil {
@@ -77,9 +78,46 @@ func PostGoSecret(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetGoSecret(w http.ResponseWriter, r *http.Request) {
+	setupResponse(&w, r)
+
+	type Result struct {
+		Data string
+	}
+
+	secret, err := template.ParseFiles("./ui/secret.html")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	key := mux.Vars(r)["key"]
+	if key == "" {
+		http.Error(w, "Not complete", http.StatusInternalServerError)
+		return
+	}
+
+	result, ok := StoreData.Load(key)
+	if !ok {
+		err1 := secret.Execute(w, &Result{
+			Data: "Not exists Data",
+		})
+		if err1 != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
+
+	err = secret.Execute(w, &Result{
+		Data: result.(string),
+	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	StoreData.Delete(key)
 
 }
-
 func enabledCORS(w *http.ResponseWriter) {
 	(*w).Header().Set("Access-Control-Allow-Origin", "*")
 }

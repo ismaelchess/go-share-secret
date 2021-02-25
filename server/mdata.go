@@ -12,6 +12,10 @@ type sdata struct {
 	Utime int
 }
 
+type sresult struct {
+	Data string
+}
+
 func (s *sdata) getUniqueId() string {
 	return uuid.New().String()
 }
@@ -24,4 +28,8 @@ func (s *sdata) expirationDate() time.Duration {
 		return time.Duration(s.Utime*24) * time.Hour
 	}
 	return time.Duration(s.Utime) * time.Minute
+}
+
+func (r *sresult) set(v string) {
+	r.Data = v
 }
