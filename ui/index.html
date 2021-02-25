@@ -21,7 +21,7 @@
      <input type="number" id="uvalue" name="uvalue" maxlength="2"></input>
       <br>
       <br>
-    <button type="button" id="btnsecret"> Create URL </button>
+    <button type="button" id="btnsecret"> Create URL</button>
       <br>
       <br> 
       <div id="dataLink" />        
@@ -39,11 +39,11 @@
                     body: JSON.stringify(tdata),
                     mode: 'cors',
                 }
-                
-        fetch(url, config)
-         .then(response => response.json)
+
+        fetch(url, config).then(response => {
+                        return response.json()
+                })
          .then(function(data){
-           alert(data)
               var cont     = document.getElementById('dataLink')
               var a        = document.createElement('a');
               var linkText = document.createTextNode(data.uri);
