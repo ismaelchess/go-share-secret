@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strconv"
 	"sync"
 	"text/template"
 	"time"
@@ -48,8 +47,6 @@ func main() {
 func PostGoSecret(w http.ResponseWriter, r *http.Request) {
 	var sdata sdata
 
-	setupResponse(&w, r)
-
 	if err := json.NewDecoder(r.Body).Decode(&sdata); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -78,7 +75,6 @@ func PostGoSecret(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetGoSecret(w http.ResponseWriter, r *http.Request) {
-	setupResponse(&w, r)
 	templateExecute := func(w *http.ResponseWriter, m string) error {
 
 		secret, err := template.ParseFiles("./ui/secret.html")
@@ -111,17 +107,4 @@ func GetGoSecret(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	StoreData.Delete(key)
-}
-
-func enabledCORS(w *http.ResponseWriter) {
-	(*w).Header().Set("Access-Control-Allow-Origin", "*")
-}
-
-func setupResponse(w *http.ResponseWriter, r *http.Request) {
-
-	maxAgeInSeconds := strconv.FormatInt(int64((time.Hour*24)/time.Second), 10)
-	(*w).Header().Set("Access-Control-Allow-Origin", "*")
-	(*w).Header().Set("Access-Control-Allow-Methods", "POST, GET")
-	(*w).Header().Set("Access-Control-Allow-Headers", "*")
-	(*w).Header().Set("Access-Control-Max-Age", maxAgeInSeconds)
 }
