@@ -1,6 +1,3 @@
-# go-share-secret
-first repository
-
 
 ## Execution
 
