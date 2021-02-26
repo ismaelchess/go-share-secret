@@ -79,15 +79,19 @@ func PostGoSecret(w http.ResponseWriter, r *http.Request) {
 
 func GetGoSecret(w http.ResponseWriter, r *http.Request) {
 	setupResponse(&w, r)
+	templateExecute := func(w *http.ResponseWriter, m string) error {
 
-	type Result struct {
-		Data string
-	}
-
-	secret, err := template.ParseFiles("./ui/secret.html")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		secret, err := template.ParseFiles("./ui/secret.html")
+		if err != nil {
+			return err
+		}
+		err1 := secret.Execute(*w, &Result{
+			Data: m,
+		})
+		if err1 != nil {
+			return err
+		}
+		return nil
 	}
 
 	key := mux.Vars(r)["key"]
@@ -95,29 +99,20 @@ func GetGoSecret(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Not complete", http.StatusInternalServerError)
 		return
 	}
-
 	result, ok := StoreData.Load(key)
 	if !ok {
-		err1 := secret.Execute(w, &Result{
-			Data: "Not exists Data",
-		})
-		if err1 != nil {
+		if err := templateExecute(&w, "Not Exist Data"); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 		return
 	}
-
-	err = secret.Execute(w, &Result{
-		Data: result.(string),
-	})
-	if err != nil {
+	if err := templateExecute(&w, result.(string)); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
 	StoreData.Delete(key)
-
 }
+
 func enabledCORS(w *http.ResponseWriter) {
 	(*w).Header().Set("Access-Control-Allow-Origin", "*")
 }
@@ -129,5 +124,4 @@ func setupResponse(w *http.ResponseWriter, r *http.Request) {
 	(*w).Header().Set("Access-Control-Allow-Methods", "POST, GET")
 	(*w).Header().Set("Access-Control-Allow-Headers", "*")
 	(*w).Header().Set("Access-Control-Max-Age", maxAgeInSeconds)
-
 }

@@ -12,7 +12,7 @@ type sdata struct {
 	Utime int
 }
 
-type sresult struct {
+type Result struct {
 	Data string
 }
 
@@ -28,8 +28,4 @@ func (s *sdata) expirationDate() time.Duration {
 		return time.Duration(s.Utime*24) * time.Hour
 	}
 	return time.Duration(s.Utime) * time.Minute
-}
-
-func (r *sresult) set(v string) {
-	r.Data = v
 }
