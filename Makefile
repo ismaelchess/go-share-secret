@@ -4,4 +4,4 @@ run:
 	go run ./server/
 
 dev:
-	CompileDaemon -directory=. -log-prefix=false -build="go run ./server/" -command="." -exclude-dir=.git -exclude-dir=./integration
+	CompileDaemon -directory=./server -log-prefix=false -build="go build" -command="./server/server" -exclude-dir=.git -exclude-dir=./integration
