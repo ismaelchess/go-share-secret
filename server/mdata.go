@@ -12,6 +12,11 @@ type sdata struct {
 	Utime int
 }
 
+type PathHost struct {
+	Port string
+	Host string
+}
+
 type Result struct {
 	Data string
 }
