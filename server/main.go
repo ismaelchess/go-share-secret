@@ -5,40 +5,42 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"sync"
 	"text/template"
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/subosito/gotenv"
 )
 
 var StoreData sync.Map
+var DataHost PathHost
 
 func init() {
-
+	gotenv.Load()
 }
 
 func main() {
-
 	r := mux.NewRouter()
-
-	fmt.Println("initial")
+	DataHost = GetPathHost()
 
 	tbl := template.Must(template.ParseFiles("./ui/index.html"))
-
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 
-		err := tbl.Execute(w, nil)
+		data := &Result{Data: DataHost.Host}
+		err := tbl.Execute(w, data)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-
 	})
 	r.HandleFunc("/secret", PostGoSecret).Methods(http.MethodPost)
 	r.HandleFunc("/secret/{key}", GetGoSecret).Methods(http.MethodGet)
 
-	err := http.ListenAndServe(":8081", r)
+	fmt.Println("Run Application, Port:" + DataHost.Port)
+
+	err := http.ListenAndServe(":"+DataHost.Port, r)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -54,29 +56,24 @@ func PostGoSecret(w http.ResponseWriter, r *http.Request) {
 
 	idUrl := sdata.getUniqueId()
 	StoreData.Store(idUrl, sdata.Value)
-
 	time.AfterFunc(sdata.expirationDate(), func() {
 		StoreData.Delete(idUrl)
 	})
 
 	data, err := json.Marshal(&struct {
-		URI string `json:"uri"`
+		Path string `json:"uri"`
 	}{
-		URI: "http://localhost:8081/secret/" + idUrl,
+		Path: DataHost.Host + "/" + idUrl,
 	})
-
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
 	_, _ = w.Write(data)
-
 }
 
 func GetGoSecret(w http.ResponseWriter, r *http.Request) {
 	templateExecute := func(w *http.ResponseWriter, m string) error {
-
 		secret, err := template.ParseFiles("./ui/secret.html")
 		if err != nil {
 			return err
@@ -107,4 +104,17 @@ func GetGoSecret(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	StoreData.Delete(key)
+}
+
+func GetPathHost() PathHost {
+	var port string
+
+	if port = os.Getenv("PORT"); port == "" {
+		port = "8081"
+	}
+
+	return PathHost{
+		Port: port,
+		Host: fmt.Sprintf("http://localhost:%s/secret", port),
+	}
 }

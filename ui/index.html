@@ -27,10 +27,10 @@
       <div id="dataLink" />        
     </form> 
     <script>
+     var url = '{{.Data}}'
 
       function postData(data, unit, utime){
-        var url = 'http://localhost:8081/secret'
-           
+                   
         utime = !isNaN(utime) ? parseInt(utime, 10) : 0;
         var tdata = {value:data, unit:unit, utime: utime};
                 
@@ -46,20 +46,21 @@
          .then(function(data){
               var cont     = document.getElementById('dataLink')
               var a        = document.createElement('a');
-              var linkText = document.createTextNode(data.uri);
+              var linkText = document.createTextNode(data.uri);              
               a.appendChild(linkText);
               a.title = data.uri;
               a.target = "_blank";
               a.href = data.uri;
+              
+              cont.innerHTML = '';
               cont.appendChild(a);
         })  
       }
 
-      const load = () => {
+      const load = () => {                
         var btn = document.getElementById("btnsecret");
         
         btn.addEventListener("click", function(){
-
         var value  = document.getElementById("secret");
         var unit = document.getElementById("unit");
         var uvalue = document.getElementById("uvalue");
@@ -68,20 +69,16 @@
           alert('value data require')
           return
         }
-
         if (uvalue.value == ''){
           alert('value unit require')
           return
           
         }
-
         postData(value.value,unit.value,uvalue.value);
         
         });
-
-
       }
       window.onload = load;
     </script>
   </body>
-</html>  
+</html> 
