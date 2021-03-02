@@ -17,10 +17,6 @@ import (
 var StoreData sync.Map
 var DataHost PathHost
 
-func init() {
-	gotenv.Load()
-}
-
 func main() {
 	r := mux.NewRouter()
 	DataHost = GetPathHost()
@@ -107,12 +103,12 @@ func GetGoSecret(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetPathHost() PathHost {
-	var port string
-
-	if port = os.Getenv("PORT"); port == "" {
-		port = "8081"
+	var port = "8081"
+	if err := gotenv.Load(); err != nil {
+		if port = os.Getenv("PORT"); port == "" {
+			port = "8081"
+		}
 	}
-
 	return PathHost{
 		Port: port,
 		Host: fmt.Sprintf("http://localhost:%s/secret", port),
