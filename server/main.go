@@ -22,6 +22,7 @@ func main() {
 	DataHost = GetPathHost()
 
 	tbl := template.Must(template.ParseFiles("./ui/index.html"))
+	parser := &DefaultTemplateParser{}
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 
 		data := &Result{Data: DataHost.Host}
@@ -32,7 +33,7 @@ func main() {
 		}
 	})
 	r.HandleFunc("/secret", PostGoSecret).Methods(http.MethodPost)
-	r.HandleFunc("/secret/{key}", GetGoSecret).Methods(http.MethodGet)
+	r.HandleFunc("/secret/{key}", GetGoSecret(parser)).Methods(http.MethodGet)
 
 	fmt.Println("Run Application, Port:" + DataHost.Port)
 
@@ -68,43 +69,44 @@ func PostGoSecret(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(data)
 }
 
-func GetGoSecret(w http.ResponseWriter, r *http.Request) {
-	templateExecute := func(w *http.ResponseWriter, m string) error {
-		secret, err := template.ParseFiles("./ui/secret.html")
-		if err != nil {
-			return err
+func GetGoSecret(parser TemplateParser) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		templateExecute := func(w *http.ResponseWriter, m string) error {
+			secret, err := parser.ParseFiles()
+			if err != nil {
+				return err
+			}
+			err1 := secret.Execute(*w, &Result{
+				Data: m,
+			})
+			if err1 != nil {
+				return err
+			}
+			return nil
 		}
-		err1 := secret.Execute(*w, &Result{
-			Data: m,
-		})
-		if err1 != nil {
-			return err
+		key := mux.Vars(r)["key"]
+		if key == "" {
+			http.Error(w, "Not complete", http.StatusBadRequest)
+			return
 		}
-		return nil
-	}
-
-	key := mux.Vars(r)["key"]
-	if key == "" {
-		http.Error(w, "Not complete", http.StatusInternalServerError)
-		return
-	}
-	result, ok := StoreData.Load(key)
-	if !ok {
-		if err := templateExecute(&w, "Not Exist Data"); err != nil {
+		result, ok := StoreData.Load(key)
+		if !ok {
+			if err := templateExecute(&w, "Not Exist Data"); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
+			return
+		}
+		if err := templateExecute(&w, result.(string)); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
-		return
+		StoreData.Delete(key)
 	}
-	if err := templateExecute(&w, result.(string)); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	StoreData.Delete(key)
 }
 
 func GetPathHost() PathHost {
 	var port = "8081"
-	if err := gotenv.Load(); err != nil {
+	if err := gotenv.Load(); err == nil {
 		if port = os.Getenv("PORT"); port == "" {
 			port = "8081"
 		}
