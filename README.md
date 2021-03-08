@@ -1,7 +1,6 @@
 
 
 ## CompileDaemon
-
 ```
 cd ~
 GO111MODULE=on go get github.com/githubnemo/CompileDaemon
