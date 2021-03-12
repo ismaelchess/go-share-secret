@@ -29,5 +29,5 @@ make test
 Ope another terminal and run the following line.
 
 ```
-make open-file
+make open
 ```
