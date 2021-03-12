@@ -14,4 +14,18 @@
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
-./server/server
+# mac os files
+.DS_STORE
+
+# ide files
+.idea
+
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# Local History for Visual Studio Code
+.history/
