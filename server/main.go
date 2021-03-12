@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"sync"
@@ -35,12 +34,9 @@ func main() {
 	r.HandleFunc("/secret", PostGoSecret).Methods(http.MethodPost)
 	r.HandleFunc("/secret/{key}", GetGoSecret(parser)).Methods(http.MethodGet)
 
-	fmt.Println("Run Application, Port:" + DataHost.Port)
+	fmt.Println("Starting server at port:" + DataHost.Port)
 
-	err := http.ListenAndServe(":"+DataHost.Port, r)
-	if err != nil {
-		log.Fatal(err)
-	}
+	panic(http.ListenAndServe(":"+DataHost.Port, r))
 }
 
 func PostGoSecret(w http.ResponseWriter, r *http.Request) {
