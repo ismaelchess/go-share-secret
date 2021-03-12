@@ -27,3 +27,6 @@ testcover:
 
 up:
 	docker-compose up -d
+
+open:
+	bash +x ./scripts/openwebpage.sh

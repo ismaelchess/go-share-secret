@@ -26,4 +26,8 @@ make test
 ```
 ## Use
 
-Browse http://localhost:{PORT}`. The port is displayed on the console.
+Ope another terminal and run the following line.
+
+```
+make open-file
+```
