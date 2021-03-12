@@ -26,8 +26,4 @@ make test
 ```
 ## Use
 
-Ope another terminal and run the following line.
-
-```
-make open
-```
+Browse http://localhost:{PORT}`. The port is displayed on the console.
