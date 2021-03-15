@@ -25,13 +25,17 @@ func TestPostGoSecret(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 
+			var store Store = &MapSyncStore{}
+			dataHost := GetPathHost()
+
 			req, err := http.NewRequest(http.MethodPost, "localhost:8081/secret", strings.NewReader(tc.value))
 			if err != nil {
 				t.Fatalf("could not created request: %v", err)
 			}
 
 			rec := httptest.NewRecorder()
-			PostGoSecret(rec, req)
+			httpGoSecret := PostGoSecret(store, dataHost)
+			httpGoSecret(rec, req)
 
 			res := rec.Result()
 			defer res.Body.Close()
@@ -72,6 +76,7 @@ func TestGetGoSecret(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
+			var store Store = &MapSyncStore{}
 
 			req, err := http.NewRequest("GET", "localhost:8081/secret", nil)
 			if err != nil {
@@ -84,7 +89,7 @@ func TestGetGoSecret(t *testing.T) {
 			rec := httptest.NewRecorder()
 
 			parser := &TestTemplateParser{}
-			httpGoSecret := GetGoSecret(parser)
+			httpGoSecret := GetGoSecret(store, parser)
 			httpGoSecret(rec, req)
 
 			res := rec.Result()

@@ -6,86 +6,68 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"sync"
 	"text/template"
 
-	"github.com/go-redis/redis/v8"
 	"github.com/gorilla/mux"
 	"github.com/subosito/gotenv"
 )
 
-var StoreData sync.Map
-var DataHost PathHost
-
-var (
-	ctx = context.Background()
-	dbr *redis.Client
-)
-
-func init() {
-
-	dbr = redis.NewClient(&redis.Options{
-		Network:  "tcp",
-		Addr:     "devredis1:6379",
-		Password: "",
-		DB:       0,
-	})
-
-	fmt.Println("Connect to DB:", dbr)
-}
-
 func main() {
 
+	var store Store //= &MapSyncStore{}
+	ctx := context.Background()
+	store = NewRedisStore("devredis1:6379", ctx)
+
 	r := mux.NewRouter()
-	DataHost = GetPathHost()
+	dataHost := GetPathHost()
 
 	tbl := template.Must(template.ParseFiles("./ui/index.html"))
 	parser := &DefaultTemplateParser{}
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 
-		data := &Result{Data: DataHost.Host}
+		data := &Result{Data: dataHost.Host}
 		err := tbl.Execute(w, data)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	})
-	r.HandleFunc("/secret", PostGoSecret).Methods(http.MethodPost)
-	r.HandleFunc("/secret/{key}", GetGoSecret(parser)).Methods(http.MethodGet)
+	r.HandleFunc("/secret", PostGoSecret(store, dataHost)).Methods(http.MethodPost)
+	r.HandleFunc("/secret/{key}", GetGoSecret(store, parser)).Methods(http.MethodGet)
+	fmt.Println("Starting server at port:" + dataHost.Port)
 
-	fmt.Println("Starting server at port:" + DataHost.Port)
-
-	panic(http.ListenAndServe(":"+DataHost.Port, r))
+	panic(http.ListenAndServe(":"+dataHost.Port, r))
 }
 
-func PostGoSecret(w http.ResponseWriter, r *http.Request) {
-	var sdata sdata
+func PostGoSecret(store Store, pathHost PathHost) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var sdata sdata
 
-	if err := json.NewDecoder(r.Body).Decode(&sdata); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		if err := json.NewDecoder(r.Body).Decode(&sdata); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		key := sdata.getUniqueId()
+		err := store.Save(key, sdata.Value, sdata.expirationDate())
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+
+		data, err := json.Marshal(&struct {
+			Path string `json:"uri"`
+		}{
+			Path: pathHost.Host + "/" + key,
+		})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		_, _ = w.Write(data)
 	}
-
-	idUrl := sdata.getUniqueId()
-
-	err := dbr.Set(ctx, idUrl, sdata.Value, sdata.expirationDate()).Err()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-	}
-
-	data, err := json.Marshal(&struct {
-		Path string `json:"uri"`
-	}{
-		Path: DataHost.Host + "/" + idUrl,
-	})
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	_, _ = w.Write(data)
 }
 
-func GetGoSecret(parser TemplateParser) http.HandlerFunc {
+func GetGoSecret(store Store, parser TemplateParser) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		templateExecute := func(w *http.ResponseWriter, m string) error {
 			secret, err := parser.ParseFiles()
@@ -106,8 +88,8 @@ func GetGoSecret(parser TemplateParser) http.HandlerFunc {
 			return
 		}
 
-		result, err := dbr.Get(ctx, key).Result()
-		if err == redis.Nil {
+		value, err := store.Load(key)
+		if value == "" && err == nil {
 			if err := templateExecute(&w, "Not Exist Data"); err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 			}
@@ -119,11 +101,16 @@ func GetGoSecret(parser TemplateParser) http.HandlerFunc {
 			return
 		}
 
-		if err := templateExecute(&w, result); err != nil {
+		if err := templateExecute(&w, value); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		dbr.Del(ctx, key)
+
+		err = store.Delete(key)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 }
 
