@@ -35,6 +35,13 @@ func init() {
 }
 
 func main() {
+	var store Store
+
+	// quiero probar con mapas
+	//store=NewMapStore()
+	// ya no quiero mapas, ahora quiero que funcione aunque reinicie mi server
+	// voy a probar con redis
+	store = NewRedisStore("localhost", "6339")
 
 	r := mux.NewRouter()
 	DataHost = GetPathHost()
@@ -50,7 +57,7 @@ func main() {
 			return
 		}
 	})
-	r.HandleFunc("/secret", PostGoSecret).Methods(http.MethodPost)
+	r.HandleFunc("/secret", PostGoSecret(store)).Methods(http.MethodPost)
 	r.HandleFunc("/secret/{key}", GetGoSecret(parser)).Methods(http.MethodGet)
 
 	fmt.Println("Starting server at port:" + DataHost.Port)
@@ -58,31 +65,35 @@ func main() {
 	panic(http.ListenAndServe(":"+DataHost.Port, r))
 }
 
-func PostGoSecret(w http.ResponseWriter, r *http.Request) {
-	var sdata sdata
+func PostGoSecret(store Store) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var sdata sdata
 
-	if err := json.NewDecoder(r.Body).Decode(&sdata); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		if err := json.NewDecoder(r.Body).Decode(&sdata); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		idUrl := sdata.getUniqueId()
+
+		err := store.Save(r.Context(), idUrl, sdata.Value, sdata.expirationDate())
+
+		//err := dbr.Set(ctx, idUrl, sdata.Value, sdata.expirationDate()).Err()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+
+		data, err := json.Marshal(&struct {
+			Path string `json:"uri"`
+		}{
+			Path: DataHost.Host + "/" + idUrl,
+		})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		_, _ = w.Write(data)
 	}
-
-	idUrl := sdata.getUniqueId()
-
-	err := dbr.Set(ctx, idUrl, sdata.Value, sdata.expirationDate()).Err()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-	}
-
-	data, err := json.Marshal(&struct {
-		Path string `json:"uri"`
-	}{
-		Path: DataHost.Host + "/" + idUrl,
-	})
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	_, _ = w.Write(data)
 }
 
 func GetGoSecret(parser TemplateParser) http.HandlerFunc {
