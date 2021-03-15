@@ -7,5 +7,11 @@ services:
     working_dir: /go/src/github.com/ismaelchess/go-share-secret
     volumes: 
       - .:/go/src/github.com/ismaelchess/go-share-secret
+    links:
+      - redis:devredis1      
     ports: 
-    - 8080:8080
+      - 8080:8080
+
+  redis:
+    build: ./dockerfiles/redis
+    container_name: devredis1
