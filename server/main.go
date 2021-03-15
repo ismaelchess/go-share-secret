@@ -1,14 +1,15 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
 	"sync"
 	"text/template"
-	"time"
 
+	"github.com/go-redis/redis/v8"
 	"github.com/gorilla/mux"
 	"github.com/subosito/gotenv"
 )
@@ -16,7 +17,25 @@ import (
 var StoreData sync.Map
 var DataHost PathHost
 
+var (
+	ctx = context.Background()
+	dbr *redis.Client
+)
+
+func init() {
+
+	dbr = redis.NewClient(&redis.Options{
+		Network:  "tcp",
+		Addr:     "devredis1:6379",
+		Password: "",
+		DB:       0,
+	})
+
+	fmt.Println("Connect to DB:", dbr)
+}
+
 func main() {
+
 	r := mux.NewRouter()
 	DataHost = GetPathHost()
 
@@ -48,10 +67,11 @@ func PostGoSecret(w http.ResponseWriter, r *http.Request) {
 	}
 
 	idUrl := sdata.getUniqueId()
-	StoreData.Store(idUrl, sdata.Value)
-	time.AfterFunc(sdata.expirationDate(), func() {
-		StoreData.Delete(idUrl)
-	})
+
+	err := dbr.Set(ctx, idUrl, sdata.Value, sdata.expirationDate()).Err()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	}
 
 	data, err := json.Marshal(&struct {
 		Path string `json:"uri"`
@@ -85,18 +105,25 @@ func GetGoSecret(parser TemplateParser) http.HandlerFunc {
 			http.Error(w, "Not complete", http.StatusBadRequest)
 			return
 		}
-		result, ok := StoreData.Load(key)
-		if !ok {
+
+		result, err := dbr.Get(ctx, key).Result()
+		if err == redis.Nil {
 			if err := templateExecute(&w, "Not Exist Data"); err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 			}
 			return
 		}
-		if err := templateExecute(&w, result.(string)); err != nil {
+
+		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		StoreData.Delete(key)
+
+		if err := templateExecute(&w, result); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		dbr.Del(ctx, key)
 	}
 }
 
