@@ -5,10 +5,12 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
 	"github.com/gorilla/mux"
+	"github.com/subosito/gotenv"
 )
 
 func TestPostGoSecret(t *testing.T) {
@@ -25,8 +27,10 @@ func TestPostGoSecret(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 
+			gotenv.Load()
+			host_get := os.Getenv("HOST_GET")
+
 			var store Store = &MapSyncStore{}
-			dataHost := GetPathHost()
 
 			req, err := http.NewRequest(http.MethodPost, "localhost:8081/secret", strings.NewReader(tc.value))
 			if err != nil {
@@ -34,7 +38,7 @@ func TestPostGoSecret(t *testing.T) {
 			}
 
 			rec := httptest.NewRecorder()
-			httpGoSecret := PostGoSecret(store, dataHost)
+			httpGoSecret := PostGoSecret(store, host_get)
 			httpGoSecret(rec, req)
 
 			res := rec.Result()

@@ -15,19 +15,19 @@ type Store interface {
 }
 
 type MapSyncStore struct {
-	StoreData sync.Map
+	m sync.Map
 }
 
 func (x *MapSyncStore) Save(key string, data string, expires time.Duration) error {
 	time.AfterFunc(expires, func() {
-		x.StoreData.Delete(key)
+		x.m.Delete(key)
 	})
-	x.StoreData.Store(key, data)
+	x.m.Store(key, data)
 	return nil
 }
 
 func (x *MapSyncStore) Load(key string) (string, error) {
-	value, ok := x.StoreData.Load(key)
+	value, ok := x.m.Load(key)
 	if !ok {
 		return "", nil
 	}
@@ -35,7 +35,7 @@ func (x *MapSyncStore) Load(key string) (string, error) {
 }
 
 func (x *MapSyncStore) Delete(key string) error {
-	x.StoreData.Delete(key)
+	x.m.Delete(key)
 	return nil
 }
 
