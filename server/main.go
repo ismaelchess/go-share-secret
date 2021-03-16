@@ -13,33 +13,40 @@ import (
 )
 
 func main() {
-
 	var store Store //= &MapSyncStore{}
-	ctx := context.Background()
-	store = NewRedisStore("devredis1:6379", ctx)
 
+	gotenv.Load()
 	r := mux.NewRouter()
-	dataHost := GetPathHost()
+
+	// Get HOST and PORT
+	redis_host := os.Getenv("REDIS_HOST")
+	redis_port := os.Getenv("REDIS_PORT")
+	host_get := os.Getenv("HOST_GET")
+	port := os.Getenv("PORT")
+
+	// Create redis connection
+	ctx := context.Background()
+	store = NewRedisStore(redis_host+":"+redis_port, ctx)
 
 	tbl := template.Must(template.ParseFiles("./ui/index.html"))
 	parser := &DefaultTemplateParser{}
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 
-		data := &Result{Data: dataHost.Host}
+		data := &Result{Data: host_get}
 		err := tbl.Execute(w, data)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	})
-	r.HandleFunc("/secret", PostGoSecret(store, dataHost)).Methods(http.MethodPost)
+	r.HandleFunc("/secret", PostGoSecret(store, host_get)).Methods(http.MethodPost)
 	r.HandleFunc("/secret/{key}", GetGoSecret(store, parser)).Methods(http.MethodGet)
-	fmt.Println("Starting server at port:" + dataHost.Port)
 
-	panic(http.ListenAndServe(":"+dataHost.Port, r))
+	fmt.Println("Starting server at port:" + port)
+	panic(http.ListenAndServe(":"+port, r))
 }
 
-func PostGoSecret(store Store, pathHost PathHost) http.HandlerFunc {
+func PostGoSecret(store Store, hostGet string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var sdata sdata
 
@@ -57,7 +64,7 @@ func PostGoSecret(store Store, pathHost PathHost) http.HandlerFunc {
 		data, err := json.Marshal(&struct {
 			Path string `json:"uri"`
 		}{
-			Path: pathHost.Host + "/" + key,
+			Path: hostGet + "/" + key,
 		})
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -87,7 +94,6 @@ func GetGoSecret(store Store, parser TemplateParser) http.HandlerFunc {
 			http.Error(w, "Not complete", http.StatusBadRequest)
 			return
 		}
-
 		value, err := store.Load(key)
 		if value == "" && err == nil {
 			if err := templateExecute(&w, "Not Exist Data"); err != nil {
@@ -95,34 +101,18 @@ func GetGoSecret(store Store, parser TemplateParser) http.HandlerFunc {
 			}
 			return
 		}
-
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-
 		if err := templateExecute(&w, value); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-
 		err = store.Delete(key)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-	}
-}
-
-func GetPathHost() PathHost {
-	var port = "8081"
-	if err := gotenv.Load(); err == nil {
-		if port = os.Getenv("PORT"); port == "" {
-			port = "8081"
-		}
-	}
-	return PathHost{
-		Port: port,
-		Host: fmt.Sprintf("http://localhost:%s/secret", port),
 	}
 }
