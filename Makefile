@@ -1,3 +1,6 @@
+
+WORKING_DIR := /go/src/github.com/ismaelchess/go-share-secret
+
 FORCE:
 
 clean: down
@@ -26,4 +29,4 @@ testcover:
 	go test -cover $(shell go list ./server)
 
 up:
-	docker-compose up -d
+	WORKING_DIR=$(WORKING_DIR) docker-compose up -d
