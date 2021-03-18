@@ -1,5 +1,6 @@
 
-WORKING_DIR := /go/src/github.com/ismaelchess/go-share-secret
+WORKING_DIR := $(shell pwd)
+REDIS_DIR := ${HOME}/data/redis:/data
 
 FORCE:
 
@@ -29,4 +30,4 @@ testcover:
 	go test -cover $(shell go list ./server)
 
 up:
-	WORKING_DIR=$(WORKING_DIR) docker-compose up -d
+	REDIS_DIR=$(REDIS_DIR)  WORKING_DIR=$(WORKING_DIR) docker-compose up -d
