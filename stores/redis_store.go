@@ -1,43 +1,11 @@
-package main
+package stores
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"github.com/go-redis/redis/v8"
 )
-
-type Store interface {
-	Save(key string, data string, expires time.Duration) error
-	Load(key string) (string, error)
-	Delete(key string) error
-}
-
-type MapSyncStore struct {
-	m sync.Map
-}
-
-func (x *MapSyncStore) Save(key string, data string, expires time.Duration) error {
-	time.AfterFunc(expires, func() {
-		x.m.Delete(key)
-	})
-	x.m.Store(key, data)
-	return nil
-}
-
-func (x *MapSyncStore) Load(key string) (string, error) {
-	value, ok := x.m.Load(key)
-	if !ok {
-		return "", nil
-	}
-	return value.(string), nil
-}
-
-func (x *MapSyncStore) Delete(key string) error {
-	x.m.Delete(key)
-	return nil
-}
 
 type RedisStore struct {
 	client *redis.Client
