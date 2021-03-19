@@ -1,6 +1,6 @@
 
 WORKING_DIR := $(shell pwd)
-REDIS_DIR := ${HOME}/data/redis:/data
+REDIS_DIR := ${HOME}/data/redis
 
 FORCE:
 
@@ -21,13 +21,13 @@ log:
 	docker-compose logs -f
 
 run:
-	go run ./server/
+	go run ./
 
 test:
-	go test -v -count 1 ./server
+	go test -v -count 1 .
 
 testcover:
-	go test -cover $(shell go list ./server)
+	go test -cover $(shell go list .)
 
 up:
 	REDIS_DIR=$(REDIS_DIR)  WORKING_DIR=$(WORKING_DIR) docker-compose up -d

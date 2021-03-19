@@ -1,4 +1,4 @@
-package main
+package svc
 
 import (
 	"path/filepath"
@@ -8,26 +8,21 @@ import (
 	"github.com/google/uuid"
 )
 
-type sdata struct {
+type Par struct {
 	Value string
 	Unit  string
 	Utime int
-}
-
-type PathHost struct {
-	Port string
-	Host string
 }
 
 type Result struct {
 	Data string
 }
 
-func (s *sdata) getUniqueId() string {
+func (s *Par) getUniqueId() string {
 	return uuid.New().String()
 }
 
-func (s *sdata) expirationDate() time.Duration {
+func (s *Par) expirationDate() time.Duration {
 	switch s.Unit {
 	case "h":
 		return time.Duration(s.Utime) * time.Hour
@@ -50,7 +45,7 @@ func (r *DefaultTemplateParser) ParseFiles() (*template.Template, error) {
 type TestTemplateParser struct{}
 
 func (r *TestTemplateParser) ParseFiles() (*template.Template, error) {
-	secret, err := filepath.Abs("../ui/secret.html")
+	secret, err := filepath.Abs("./ui/secret.html")
 	if err != nil {
 		return nil, err
 	}

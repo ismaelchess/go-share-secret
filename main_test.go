@@ -10,7 +10,8 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
-	"github.com/subosito/gotenv"
+	"github.com/ismaelchess/go-share-secret/stores"
+	"github.com/ismaelchess/go-share-secret/svc"
 )
 
 func TestPostGoSecret(t *testing.T) {
@@ -26,19 +27,18 @@ func TestPostGoSecret(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
+			var store stores.Store = &stores.MapSyncStore{}
 
-			gotenv.Load()
-			host_get := os.Getenv("HOST_GET")
+			//gotenv.Load()
+			host_get := os.Getenv("HOST")
 
-			var store Store = &MapSyncStore{}
-
-			req, err := http.NewRequest(http.MethodPost, "localhost:8081/secret", strings.NewReader(tc.value))
+			req, err := http.NewRequest(http.MethodPost, "localhost:8080/secret", strings.NewReader(tc.value))
 			if err != nil {
 				t.Fatalf("could not created request: %v", err)
 			}
 
 			rec := httptest.NewRecorder()
-			httpGoSecret := PostGoSecret(store, host_get)
+			httpGoSecret := svc.PostGoSecret(store, host_get)
 			httpGoSecret(rec, req)
 
 			res := rec.Result()
@@ -80,9 +80,9 @@ func TestGetGoSecret(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			var store Store = &MapSyncStore{}
+			var store stores.Store = &stores.MapSyncStore{}
 
-			req, err := http.NewRequest("GET", "localhost:8081/secret", nil)
+			req, err := http.NewRequest("GET", "localhost:8080/secret", nil)
 			if err != nil {
 				t.Fatalf("could not created request: %v", err)
 			}
@@ -92,8 +92,8 @@ func TestGetGoSecret(t *testing.T) {
 
 			rec := httptest.NewRecorder()
 
-			parser := &TestTemplateParser{}
-			httpGoSecret := GetGoSecret(store, parser)
+			parser := &svc.TestTemplateParser{}
+			httpGoSecret := svc.GetGoSecret(store, parser)
 			httpGoSecret(rec, req)
 
 			res := rec.Result()

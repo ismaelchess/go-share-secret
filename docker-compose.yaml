@@ -14,7 +14,6 @@ services:
     image: redis:5-alpine
     command: "redis-server --appendonly yes"
     volumes:
-      - ${REDIS_DIR}
-    container_name: ${REDIS_HOST}
+      - ${REDIS_DIR}:/data
     ports: 
-      - ${REDIS_PORT}:${REDIS_PORT}
+      - 6379:6379
