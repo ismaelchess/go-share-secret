@@ -4,16 +4,18 @@ services:
     build:
       context: .
       dockerfile: ./dockerfiles/dev.Dockerfile
-    working_dir: ${WORKING_DIR}
-    volumes: 
-      - .:${WORKING_DIR}
+    working_dir: /go/src/github.com/ismaelchess/go-share-secret
+    volumes:
+      - .:/go/src/github.com/ismaelchess/go-share-secret
     ports: 
-      - ${PORT}:${PORT}
+      - 8080:8080
+    depends_on:
+      - redis
 
   redis:
     image: redis:5-alpine
     command: "redis-server --appendonly yes"
     volumes:
-      - ${REDIS_DIR}:/data
+      - ${HOME}/data/redis:/data
     ports: 
       - 6379:6379

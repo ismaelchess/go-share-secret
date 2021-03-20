@@ -26,4 +26,4 @@ make test
 ```
 ## Use
 
-Browse http://localhost:{PORT}`. The port is displayed on the console.
+Browse http://localhost:8080. The port is displayed on the console.

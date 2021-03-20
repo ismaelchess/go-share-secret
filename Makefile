@@ -1,7 +1,4 @@
 
-WORKING_DIR := $(shell pwd)
-REDIS_DIR := ${HOME}/data/redis
-
 FORCE:
 
 clean: down
@@ -30,4 +27,4 @@ testcover:
 	go test -cover $(shell go list .)
 
 up:
-	REDIS_DIR=$(REDIS_DIR)  WORKING_DIR=$(WORKING_DIR) docker-compose up -d
+	docker-compose up -d
