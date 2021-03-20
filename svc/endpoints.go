@@ -72,12 +72,12 @@ func GetGoSecret(store stores.Store, parser TemplateParser) http.HandlerFunc {
 		}
 		key := mux.Vars(r)["key"]
 		if key == "" {
-			http.Error(w, "Not complete", http.StatusBadRequest)
+			http.Error(w, "The route is not complete.", http.StatusBadRequest)
 			return
 		}
 		value, err := store.Load(key)
 		if value == "" && err == nil {
-			if err := executeTemplate(&w, "Not Exist Data"); err != nil {
+			if err := executeTemplate(&w, "There is not data saved on this route."); err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 			}
 			return
