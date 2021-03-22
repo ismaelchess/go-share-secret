@@ -1,6 +1,7 @@
 package stores
 
 import (
+	"fmt"
 	"sync"
 	"time"
 )
@@ -20,7 +21,7 @@ func (x *MapSyncStore) Save(key string, data string, expires time.Duration) erro
 func (x *MapSyncStore) Load(key string) (string, error) {
 	value, ok := x.m.Load(key)
 	if !ok {
-		return "", nil
+		return "", fmt.Errorf("key not found")
 	}
 	return value.(string), nil
 }
