@@ -2,6 +2,7 @@ package stores
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/go-redis/redis/v8"
@@ -36,7 +37,7 @@ func (x *RedisStore) Save(key string, data string, expires time.Duration) error 
 func (x *RedisStore) Load(key string) (string, error) {
 	value, err := x.client.Get(x.ctx, key).Result()
 	if err == redis.Nil {
-		return "", nil
+		return "", fmt.Errorf("key not found")
 	}
 	if err != nil {
 		return "", err

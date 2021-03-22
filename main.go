@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"text/template"
@@ -10,18 +10,12 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/ismaelchess/go-share-secret/stores"
 	"github.com/ismaelchess/go-share-secret/svc"
-	"github.com/subosito/gotenv"
 )
 
-func init() {
-	if err := gotenv.Load(".env"); err != nil {
-		fmt.Println("Error:" + err.Error())
-		return
-	}
-}
 func main() {
-	//= &MapSyncStore{}
-	var store stores.Store
+	log.SetFlags(log.Lshortfile | log.LstdFlags)
+
+	var store stores.Store //= &stores.MapSyncStore{}
 
 	r := mux.NewRouter()
 
@@ -30,7 +24,7 @@ func main() {
 	host := os.Getenv("HOST")
 	port := os.Getenv("PORT")
 
-	// // Create redis connection
+	// Create redis connection
 	ctx := context.Background()
 	store = stores.NewRedisStore(redisHost+":6379", ctx)
 
@@ -42,6 +36,6 @@ func main() {
 	r.HandleFunc("/secret/{key}", svc.GetGoSecret(store, parser)).Methods(http.MethodGet)
 	http.Handle("/", r)
 
-	fmt.Println("Starting server at port:" + port)
-	panic(http.ListenAndServe(":"+port, r))
+	log.Println("Starting server at port:" + port)
+	log.Fatal(http.ListenAndServe(":"+port, r))
 }
