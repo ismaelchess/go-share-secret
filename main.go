@@ -7,17 +7,20 @@ import (
 	"os"
 	"text/template"
 
-	"github.com/gorilla/mux"
 	"github.com/ismaelchess/go-share-secret/stores"
 	"github.com/ismaelchess/go-share-secret/svc"
+	zap "go.uber.org/zap"
 )
 
 func main() {
 	log.SetFlags(log.Lshortfile | log.LstdFlags)
-
 	var store stores.Store //= &stores.MapSyncStore{}
 
-	r := mux.NewRouter()
+	logger := zap.NewExample()
+	defer logger.Sync()
+	sugar := logger.Sugar()
+
+	mux := http.NewServeMux()
 
 	// Get HOST and PORT
 	redisHost := os.Getenv("REDIS_HOST")
@@ -31,11 +34,12 @@ func main() {
 	tbl := template.Must(template.ParseFiles("./ui/index.html"))
 	parser := &svc.DefaultTemplateParser{}
 
-	r.HandleFunc("/", svc.GoSecret(host, tbl))
-	r.HandleFunc("/secret", svc.PostGoSecret(store, host)).Methods(http.MethodPost)
-	r.HandleFunc("/secret/{key}", svc.GetGoSecret(store, parser)).Methods(http.MethodGet)
-	http.Handle("/", r)
+	mux.Handle("/", svc.Middlewarelog(sugar, svc.GoSecret(host, tbl)))
+	mux.Handle("/secret", svc.Middlewarelog(sugar, svc.PostGoSecret(store, host)))        //.Methods(http.MethodPost)
+	mux.Handle("/secret/{key}", svc.Middlewarelog(sugar, svc.GetGoSecret(store, parser))) //.Methods(http.MethodGet)
+
+	sugar.Info("Initial Server")
 
 	log.Println("Starting server at port:" + port)
-	log.Fatal(http.ListenAndServe(":"+port, r))
+	log.Fatal(http.ListenAndServe(":"+port, mux))
 }

@@ -9,20 +9,19 @@ import (
 	"github.com/ismaelchess/go-share-secret/stores"
 )
 
-func GoSecret(host string, tbl *template.Template) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func GoSecret(host string, tbl *template.Template) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		data := &Result{Data: host + "/secret"}
 		err := tbl.Execute(w, data)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-
-	}
+	})
 }
 
-func PostGoSecret(store stores.Store, host string) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func PostGoSecret(store stores.Store, host string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var par Par
 
 		if err := json.NewDecoder(r.Body).Decode(&par); err != nil {
@@ -52,11 +51,11 @@ func PostGoSecret(store stores.Store, host string) http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 
-	}
+	})
 }
 
-func GetGoSecret(store stores.Store, parser TemplateParser) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func GetGoSecret(store stores.Store, parser TemplateParser) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		executeTemplate := func(w *http.ResponseWriter, m string) error {
 			secret, err := parser.ParseFiles()
 			if err != nil {
@@ -84,5 +83,5 @@ func GetGoSecret(store stores.Store, parser TemplateParser) http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-	}
+	})
 }
