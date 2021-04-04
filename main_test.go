@@ -39,7 +39,7 @@ func TestPostGoSecret(t *testing.T) {
 
 			rec := httptest.NewRecorder()
 			httpGoSecret := svc.PostGoSecret(store, host_get)
-			httpGoSecret(rec, req)
+			httpGoSecret.ServeHTTP(rec, req)
 
 			res := rec.Result()
 			defer res.Body.Close()
@@ -74,15 +74,15 @@ func TestGetGoSecret(t *testing.T) {
 		status  int
 		wantErr bool
 	}{
-		{name: "correct value", value: "9f43506d-c5f0-45e9-8871-d513e8da9018", status: http.StatusOK, wantErr: false},
-		{name: "missing value", value: "", status: http.StatusBadRequest, wantErr: true},
+		{name: "correct value", value: "9f43506d-c5f0-45e9-8871-d513e8da9018", status: http.StatusNotFound, wantErr: true},
+		{name: "missing value", value: "", status: http.StatusNotFound, wantErr: true},
 	}
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			var store stores.Store = &stores.MapSyncStore{}
 
-			req, err := http.NewRequest("GET", "localhost:8080/secret", nil)
+			req, err := http.NewRequest("GET", "localhost:8080/secret/1", nil)
 			if err != nil {
 				t.Fatalf("could not created request: %v", err)
 			}
@@ -94,13 +94,13 @@ func TestGetGoSecret(t *testing.T) {
 
 			parser := &svc.TestTemplateParser{}
 			httpGoSecret := svc.GetGoSecret(store, parser)
-			httpGoSecret(rec, req)
+			httpGoSecret.ServeHTTP(rec, req)
 
 			res := rec.Result()
 			defer res.Body.Close()
 
 			if tc.wantErr {
-				if res.StatusCode != http.StatusBadRequest {
+				if res.StatusCode != http.StatusNotFound {
 					t.Errorf("expected status badrequest; got %v", res.Status)
 				}
 			} else {
