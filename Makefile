@@ -3,6 +3,9 @@ FORCE:
 
 clean: down
 
+build: 
+	go build -o service
+
 down:
 	docker-compose down --remove-orphans
 
