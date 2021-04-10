@@ -9,7 +9,11 @@ pipeline{
         stage('Pre Test') {
             steps {
                     sh '''
-                        make get
+                    whoami
+                    echo "=============="
+                    echo $PATH
+                    go version; \\
+                    make get
                     '''
             }
         }
