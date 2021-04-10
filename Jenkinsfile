@@ -1,7 +1,11 @@
 pipeline{
     agent any
 
+    tools {
+        go 'go1.15.5'
+    }
     environment {
+        GO111MODULE = 'on'
         XDG_CACHE_HOME="/tmp/.cache"
     }
 
@@ -9,10 +13,6 @@ pipeline{
         stage('Pre Test') {
             steps {
                     sh '''
-                    whoami
-                    echo "=============="
-                    echo $PATH
-                    go version; \\
                     make get
                     '''
             }
