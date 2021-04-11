@@ -2,7 +2,6 @@ pipeline{
     agent any
 
     environment {
-        GO111MODULE = 'on'
         XDG_CACHE_HOME="/tmp/.cache"
     }
 
