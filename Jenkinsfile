@@ -1,36 +1,46 @@
 pipeline{
     agent any
 
-    tools {
-        go 'GO1.15'
-    }
     environment {
         GO111MODULE = 'on'
         XDG_CACHE_HOME="/tmp/.cache"
     }
 
     stages {
-        stage('Pre Test') {
-            steps {
-                    sh '''
-                    make get
-                    '''
-            }
-        }
         stage('Build') {
             steps {
-                    sh '''
-                        make build
-                    '''
+                withCredentials([string(credentialsId: 'github-token', variable: 'NETRC')]) {
+                        sh '''
+                            make docker-image-build
+                        '''
+                }
             }
         }
+        stage('Lint'){
+            steps {
+                script {
+                    withCredentials([string(credentialsId: 'github-token', variable: 'NETRC')]) {
+                        sh '''
+                            make lint
+                        '''
+                    }
+                }
+            }
+        }         
         stage('Test') {
             steps {
                     sh '''
-                        make test
+                        make docker-test
                     '''
             }
         }
 
     }
+    post {
+        always {
+            sh '''
+                make docker-network-clean docker-clean docker-clean-volumes
+            '''
+        }
+    }    
 }

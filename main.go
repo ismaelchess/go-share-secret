@@ -17,7 +17,13 @@ func main() {
 	var store stores.Store //= &stores.MapSyncStore{}
 
 	logger := zap.NewExample()
-	defer logger.Sync()
+	//defer logger.Sync()
+	defer func() {
+		err := logger.Sync()
+		if err != nil {
+			log.Panic(err)
+		}
+	}()
 	sugar := logger.Sugar()
 
 	mux := http.NewServeMux()
