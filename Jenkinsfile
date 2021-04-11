@@ -8,16 +8,22 @@ pipeline{
     stages {
         stage('Build') {
             steps {
-                sh '''
-                    make docker-image-build
-                '''
+                withCredentials([string(credentialsId: 'github-token', variable: 'NETRC')]) {
+                        sh '''
+                            make docker-image-build
+                        '''
+                }
             }
         }
         stage('Lint'){
             steps {
-                sh '''
-                    make docker-lint
-                '''
+                script {
+                    withCredentials([string(credentialsId: 'github-token', variable: 'NETRC')]) {
+                        sh '''
+                            make docker-lint
+                        '''
+                    }
+                }
             }
         }         
         stage('Test') {
