@@ -21,7 +21,7 @@ pipeline{
                 script {
                     withCredentials([string(credentialsId: 'github-token', variable: 'NETRC')]) {
                         sh '''
-                            make lint
+                            make docker-lint
                         '''
                     }
                 }
