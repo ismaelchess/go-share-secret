@@ -20,6 +20,5 @@ func Middlewarelog(sugar *zap.SugaredLogger, next http.Handler) http.Handler {
 			"Method", r.Method,
 			"duration", duration,
 		)
-
 	})
 }
