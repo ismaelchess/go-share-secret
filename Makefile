@@ -1,4 +1,6 @@
 
+
+#IMA
 VERSION := "v0.0.0"
 BASE_NAME := go-share-secret
 BINARY_NAME="service"
@@ -44,7 +46,6 @@ up:
 
 install:
 	go install
-
 
 # Jekins using Dockers
 jenkins: jk-docker-image-build jk-docker-test jk-docker-lint jk-docker-clean-all
