@@ -1,6 +1,5 @@
 
 
-#IMA
 VERSION := "v0.0.0"
 BASE_NAME := go-share-secret
 BINARY_NAME="service"
