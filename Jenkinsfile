@@ -9,21 +9,21 @@ pipeline{
         stage('Build') {
             steps {
                 sh '''
-                    make docker-image-build
+                    make jk-docker-image-build
                 '''
             }
         }
         stage('Lint'){
             steps {
                 sh '''
-                    make docker-lint
+                    make jk-docker-lint
                 '''
             }
         }         
         stage('Test') {
             steps {
                     sh '''
-                        make docker-test
+                        make jk-docker-test
                     '''
             }
         }
@@ -32,7 +32,7 @@ pipeline{
     post {
         always {
             sh '''
-                make docker-network-clean docker-clean docker-clean-volumes
+                make jk-docker-clean-all
             '''
         }
     }    
